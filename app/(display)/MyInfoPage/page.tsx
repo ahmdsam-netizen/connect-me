@@ -20,16 +20,25 @@ export default function myInfo(){
     const [followers , setFollowers] = useState(0) 
     const [followings , setFollowings] = useState(0)  
     const [whileDeleting , setWhileDeleting] = useState(false)
+    const [isLoading , setIsLoading] = useState(false) 
 
     useEffect(() => {
         async function getData(){
-            const res = await axios.get("/api/user/aboutMe") ;
-            const data = res.data.response ;
-            setUserName(data.userName) 
-            setName(data.name) 
-            setPosts(data.posts) 
-            setFollowers(data.followers) 
-            setFollowings(data.followings) 
+            try {
+                setIsLoading(true) ;
+                const res = await axios.get("/api/user/aboutMe") ;
+                const data = res.data.response ;
+                setUserName(data.userName) 
+                setName(data.name) 
+                setPosts(data.posts) 
+                setFollowers(data.followers) 
+                setFollowings(data.followings) 
+            } 
+            catch (error) {
+                console.log("Failed to fetch info")
+            } finally {
+                setIsLoading(false)
+            }
         }
         getData() ;
     } , [])
@@ -46,6 +55,17 @@ export default function myInfo(){
         } finally {
             setWhileDeleting(false)
         }
+    }
+
+    if (isLoading) {
+        return (
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950">
+            <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-4"></div>
+            <p className="text-slate-400 text-lg">Loading posts...</p>
+            </div>
+        </div>
+        )
     }
 
     return (
