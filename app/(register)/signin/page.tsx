@@ -7,6 +7,7 @@ export default function SignInPage(){
     const [userName , setUserName] = useState("") ;
     const [password , setPassword] = useState("") ;
     const [error , setError] = useState("")
+    const [isLoading , setIsLoading] = useState(false)
     const router = useRouter() 
     const { data: session } = useSession();
 
@@ -17,21 +18,22 @@ export default function SignInPage(){
         }
     }, [session, router]);
 
-    async function signInButton(){
+    const handleSignIn = async () => {
         try {
+            setIsLoading(true)
+            setError("")
+            
             // Clear all localStorage and sessionStorage before login
             localStorage.clear();
             sessionStorage.clear();
 
             const result = await signIn("credentials" , {
-                username: userName,  // Changed from userName to username
+                username: userName,
                 password: password,
                 redirect : false
             })
             
             if (result?.ok) {
-                setError("");
-                
                 // Force a hard refresh to clear all caches
                 window.location.href = "/";
             } else {
@@ -40,6 +42,9 @@ export default function SignInPage(){
         } 
         catch (error) {
             setError("Invalid userName or password")
+        }
+        finally {
+            setIsLoading(false)
         }
     }
 
@@ -72,7 +77,7 @@ export default function SignInPage(){
                     onChange={e => setPassword(e.target.value)}
                 />
                 <button
-                    onClick={signInButton}
+                    onClick={handleSignIn}
                     className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-lg transition-all duration-200 active:scale-95 shadow-lg"
                 >
                     Sign In
