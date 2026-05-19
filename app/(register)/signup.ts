@@ -15,16 +15,11 @@ export async function signUp(userName : string , password : string , name : stri
                 name : name
             }
         })
-        NextResponse.json(
-            {"response" : " User has been created successfully ! "} ,
-            {status : 200} 
-        )
+        return user;
     } 
     catch (error : any) {
-        NextResponse.json(
-            {"response" : error.message} ,
-            {status : 500}
-        )
+        console.error("SignUp Error:", error.message);
+        throw error;
     }
     
 }

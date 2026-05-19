@@ -11,27 +11,40 @@ export const authOptions: NextAuthOptions = {
                 password : { label : "Password" , type : "password" , placeholder : "******"} ,
             } ,
             async authorize(credentials , req){
-                console.log("Authorize: Checking credentials for:", credentials?.username);
-                
-                const user = await prisma.user.findFirst({
-                    where : {
-                        password : credentials?.password ,
-                        userName : credentials?.username ,
-                    }
+                console.log("======== AUTHORIZE START ========");
+                console.log("Received credentials:", { 
+                    username: credentials?.username, 
+                    password: credentials?.password ? "***" : "undefined"
                 });
                 
-                if (!user) {
-                    console.log("Authorize: User not found for:", credentials?.username);
+                if (!credentials?.username || !credentials?.password) {
+                    console.log("ERROR: Missing username or password");
                     return null;
                 }
                 
-                console.log("Authorize: User found:", user.userName);
-                // const isValid = await bcrypt.compare(credentials.password, user.password);
-                // if (!isValid) return null;
-                
-                return { userName : user.userName, id : user.userId };
-
-                // this return value is passed to jwt callback as user object
+                try {
+                    const user = await prisma.user.findFirst({
+                        where : {
+                            userName : credentials.username,
+                            password : credentials.password
+                        }
+                    });
+                    
+                    console.log("Database query result:", user?.userName || "NOT FOUND");
+                    
+                    if (!user) {
+                        console.log("User not found in database for username:", credentials.username);
+                        return null;
+                    }
+                    
+                    console.log("User authenticated successfully:", user.userName);
+                    console.log("======== AUTHORIZE END ========");
+                    
+                    return { userName : user.userName, id : user.userId };
+                } catch (error: any) {
+                    console.error("ERROR in authorize:", error.message);
+                    return null;
+                }
             } ,
         })
     ] ,
@@ -59,8 +72,8 @@ export const authOptions: NextAuthOptions = {
                 return null;
             }
             
-            // When user logs in, create a fresh new token
-            if(user && account) {
+            // When user logs in, create a fresh new token (works for both credentials and other providers)
+            if(user) {
                 console.log("JWT: New login detected for user:", user.userName);
                 const newToken = {
                     id : user.id,
@@ -77,17 +90,25 @@ export const authOptions: NextAuthOptions = {
         },
 
         async session({session , token} : any){
+            console.log("======== SESSION CALLBACK ========");
+            console.log("Token:", token ? { id: token.id, userName: token.userName } : "null");
+            console.log("Session user before:", session.user?.userName);
+            
             // If no valid token, return null (no session)
             if(!token || !token.id){
-                console.log("Session: No valid token");
+                console.log("ERROR: No valid token, returning null session");
                 return null;
             }
             
-            // Create fresh session object
-            if(session.user) {
-                session.user.id = token.id ;
-                session.user.userName = token.userName
+            // Create fresh session object from token
+            session.user = {
+                id: token.id,
+                userName: token.userName,
+                email: token.email || null
             }
+            
+            console.log("Session user after:", session.user?.userName);
+            console.log("======== SESSION CALLBACK END ========");
             return session ;
         },
 

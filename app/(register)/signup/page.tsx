@@ -13,16 +13,32 @@ export default function SignUpPage(){
 
     async function signUpButton(){
         try {
-            await signUp( userName , password , name )
-            const result = await signIn("credentials", { userName, password, redirect: false })
+            setError("");
+            console.log("Starting signup for:", userName);
+            
+            // Create the user
+            const newUser = await signUp( userName , password , name )
+            console.log("User created:", newUser?.userName);
+            
+            // Sign in the newly created user
+            const result = await signIn("credentials", { username: userName, password, redirect: false })
+            console.log("SignIn result:", result);
+            
             if (result?.error) {
-                setError("Invalid credentials")
-            return
-            }   
+                setError("Signup successful but signin failed: " + result.error)
+                return
+            }
+            
+            if (!result?.ok) {
+                setError("Signin failed after signup")
+                return
+            }
+            
             router.push("/")
         } 
         catch (error : any) {
-            setError(error.message)
+            console.error("Signup error:", error);
+            setError(error.message || "Signup failed")
         }
     }
     return (
